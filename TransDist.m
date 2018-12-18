@@ -67,7 +67,7 @@ end
 mu = mu./sum(mu);
 
 %% Dynamic Programming Problem
-L0 =  0.3237; %sum(sum(mu(1:JR-1)));
+L0 = input_par.L; %sum(sum(mu(1:JR-1)));
 % Inital guess of capital 
 K0 = input_par.K; %
 
@@ -77,11 +77,11 @@ v0_zl = input_par.v0_zl;
 
 v0_r = v0_zh(:,JR:N); % cutting the aging group down 
 %-------------- Begin trail and error to find the euqilibirumn wage -----
-diff = 10;
-Iter = 0;
-tol_price = 0.001;
-
-while diff > tol_price
+% diff = 10;
+% Iter = 0;
+% tol_price = 0.001;
+% 
+% while diff > tol_price
 % tic
 
 % compute the wage and interest rate given guess L0 and K0
@@ -103,21 +103,16 @@ u_r = (c_r .^ ((1-ssigma) .* ggama))./(1-ssigma);
 u_r(isnan(u_r)) = -inf;
 
 v1_r = zeros(Na,N-JR+1); % v1 is the current period of value function.
+
+v1_r(:,N-JR+1) = u_r(:,1); % J = N person will not choose saving for next period.
+
 dec_r = zeros(Na,N-JR+1);
-
-v1_r(:,N-JR+1) = u_r(:,1); % the value for the last period is to choose aa = 0; 
-
-
-% find the value function for the T age agent
-% v1_r(:,N-JR)= v0_r(:,N-JR); % The coloumn 1 means the agent choose not to save in this period.
-
 % find the value function for the j<T age agent
 for j = N-JR:-1:1
     w_r = u_r + bbeta .*v0_r(:,j+1)';
     [v1_r(:,j), dec_r(:,j)] = max(w_r,[],2);
 end
 
-% plot(A,v1_r(:,4))
 %%
 %----------- The utility function for worked agent ----------------
 % labor efficiency 
@@ -159,21 +154,21 @@ v1_w_zh = zeros(Na,JR-1);
 v1_w_zl = zeros(Na,JR-1);
 
 for j = JR-1
-    % extract the value function for the previous period
-v0_w_zh_temp = v0_w_zh(:,j+1);
-v0_w_zl_temp = v0_w_zl(:,j+1);
+     % extract the value function for the previous period
+    v0_w_zh_temp = v0_w_zh(:,j+1);
+    v0_w_zl_temp = v0_w_zl(:,j+1);
 
-% calculate the labor choice given agent j
-l_zh = labor(data,theta_l,j,1); % labor choic when status is high
-l_zl = labor(data,theta_l,j,2); % labor choice when status is low
-    
-% searh for the best aa' for each a
+    % calculate the labor choice given agent j
+    l_zh = labor(data,theta_l,j,1); % labor choic when status is high
+    l_zl = labor(data,theta_l,j,2); % labor choice when status is low
+
+    % searh for the best aa' for each a
 
 
-% extract the labor efficiency for the current age
-e1j = e(1,j);
-e2j = e(2,j);
-   
+    % extract the labor efficiency for the current age
+    e1j = e(1,j);
+    e2j = e(2,j);
+
     % ------------ the labor l and future asset aaa choice of worker --------------------
     % consumption of worker
     c_w_zh = w * (1-ttheta)* e1j * l_zh + (1+r) * a - aa';
@@ -206,7 +201,7 @@ e2j = e(2,j);
    dec_l_zh(i,j) =  l_zh(i,dec_zh_aa(i));
    dec_l_zl(i,j) =  l_zl(i,dec_zl_aa(i));
    end
-   
+%    
     % storage the value function
     v1_w_zh(:,j) = v1_zh_temp;
     v1_w_zl(:,j) = v1_zl_temp;
@@ -268,7 +263,7 @@ end
    dec_l_zh(i,j) =  l_zh(i,dec_zh_aa(i));
    dec_l_zl(i,j) =  l_zl(i,dec_zl_aa(i));
    end
-   
+%    
     % storage the value function
     v1_w_zh(:,j) = v1_zh_temp;
     v1_w_zl(:,j) = v1_zl_temp;
@@ -331,15 +326,6 @@ for j = 1:JR-1
     trans_aa(:,:,j) = trans_aa(:,:,j)'; 
 end
 
-% compute the transition matrix for retiring agent
-% - retiring agent does not need the transition matrix, since they do not
-% have two type. So we can just use the decision matrix.
-% trans_r = zeros(2*Na,2*Na,N-JR); 
-% for j = 1:N-JR-1
-%     trans_r(:,:,j) = [g_aa_r(:,:,j),g_aa_r(:,:,j);
-%                       g_aa_r(:,:,j),g_aa_r(:,:,j)];
-%     trans_r(:,:,j) = trans_r(:,:,j)';
-% end
 
 %%
 % -------- the wealth distribution of each cohort -------------
@@ -393,8 +379,8 @@ mu_phi_zl = phi_zl(:,1:JR-1) * mu_work;
 mu_phi_r = phi_r * mu_r;
 
 % merge the two density distribution
-mu_phi_zh = [mu_phi_zh, mu_phi_r];
-mu_phi_zl = [mu_phi_zl, mu_phi_r];
+mu_zh = [mu_phi_zh, mu_phi_r];
+mu_zl = [mu_phi_zl, mu_phi_r];
 
 % merge the two value function
 v_zh = [v1_w_zh, v1_r];
@@ -408,8 +394,8 @@ K_new = sum(A.* sum((mu_phi_zh + mu_phi_zl),2) + A.* sum(mu_phi_r,2));
 
 % ---- calculate the labor choices distribution -----------------
 % mu_l_zh is the labor choice density after adjust the cohor distribution
-mu_l_zh =  dec_l_zh .*  mu_phi_zh(:,1:JR-1);
-mu_l_zl =  dec_l_zl .*  mu_phi_zl(:,1:JR-1);
+mu_l_zh =  dec_l_zh .*  mu_zh(:,1:JR-1);
+mu_l_zl =  dec_l_zl .*  mu_zl(:,1:JR-1);
 
 % calcualte the labor offer for different z
 l_zh = mu_l_zh * diag(e(1,:));
@@ -418,30 +404,34 @@ l_zl = mu_l_zl * diag(e(2,:));
 L_new = sum(sum(l_zh+l_zl));
 
 
-% update K and L
-K1 = 0.5 * K0 + 0.5 * K_new;
-L1 = 0.5 * L0 + 0.5 * L_new;
+% % update K and L
+% K1 = 0.5 * K0 + 0.5 * K_new;
+% L1 = 0.5 * L0 + 0.5 * L_new;
+% 
+% diff = [K_new-K0, L_new-L0];
+% diff = max(abs(diff));
+% 
+% K0 = K1;
+% L0 = L1;
 
-diff = [K_new-K0, L_new-L0];
-diff = max(abs(diff));
-
-K0 = K1;
-L0 = L1;
-
-Iter = Iter + 1;
-
-%fprintf('Iteration %d: the difference is %.4f, wage is %.4f, interest rate is %.4f \n ', Iter, diff,w, r);
-
+% Iter = Iter + 1;
+% 
+% %fprintf('Iteration %d: the difference is %.4f, wage is %.4f, interest rate is %.4f \n ', Iter, diff,w, r);
+% 
 % toc
-end
+% end
 
 % bundling the output
 out.mu_phi_zh = mu_phi_zh; % stationary distribution for zh people
 out.mu_phi_zl = mu_phi_zl; % stationary distribution for zl people
 out.v_zh = v_zh; % stationary value function for zh people
 out.v_zl = v_zl; % stationary value function for zl people
-out.L = L0; % accumulative distribution for labor surply
-out.K = K0; % accumulative distribution for capital surply
+out.L = L_new; % accumulative distribution for labor surply
+out.K = K_new; % accumulative distribution for capital surply
+out.w = w; % output the wage
+out.r = r; % output interest rate
+
+
 
 end
 

@@ -200,12 +200,12 @@ e2j = e(2,j);
     dec_aa_zh(:,j) = dec_zh_aa;
     dec_aa_zl(:,j) = dec_zl_aa;  
    
-   % storage the labor choice 
+   %storage the labor choice 
    for i=1:Na
    dec_l_zh(i,j) =  l_zh(i,dec_zh_aa(i));
    dec_l_zl(i,j) =  l_zl(i,dec_zl_aa(i));
    end
-   
+%    
     % storage the value function
     v1_w_zh(:,j) = v1_zh;
     v1_w_zl(:,j) = v1_zl;
@@ -396,8 +396,8 @@ mu_phi_zl = phi_zl(:,1:JR-1) * mu_work;
 mu_phi_r = phi_r * mu_r;
 
 % merge the two density distribution
-mu_phi_zh = [mu_phi_zh, mu_phi_r];
-mu_phi_zl = [mu_phi_zl, mu_phi_r];
+mu_zh = [mu_phi_zh, mu_phi_r];
+mu_zl = [mu_phi_zl, mu_phi_r];
 
 % merge the two value function
 v_zh = [v0_w_zh, v0_r];
@@ -411,8 +411,8 @@ K_new = sum(A.* sum((mu_phi_zh + mu_phi_zl),2) + A.* sum(mu_phi_r,2));
 
 % ---- calculate the labor choices distribution -----------------
 % mu_l_zh is the labor choice density after adjust the cohor distribution
-mu_l_zh =  dec_l_zh .*  mu_phi_zh(:,1:JR-1);
-mu_l_zl =  dec_l_zl .*  mu_phi_zl(:,1:JR-1);
+mu_l_zh =  dec_l_zh .*  mu_zh(:,1:JR-1);
+mu_l_zl =  dec_l_zl .*  mu_zl(:,1:JR-1);
 
 % calcualte the labor offer for different z
 l_zh = mu_l_zh * diag(e(1,:));
@@ -439,12 +439,14 @@ toc
 end
 
 % bundling the output
-out.mu_phi_zh = mu_phi_zh; % stationary distribution for zh people
-out.mu_phi_zl = mu_phi_zl; % stationary distribution for zl people
+out.mu_zh = mu_zh; % stationary distribution for zh people
+out.mu_zl = mu_zl; % stationary distribution for zl people
 out.v_zh = v_zh; % stationary value function for zh people
 out.v_zl = v_zl; % stationary value function for zl people
 out.L = L0; % accumulative distribution for labor surply
 out.K = K0; % accumulative distribution for capital surply
+out.w = w; % output the wage
+out.r = r; % output interest rate
 
 end
 
