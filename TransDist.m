@@ -75,14 +75,14 @@ K0 = input_par.K; %
 v0_zh = input_par.v0_zh; 
 v0_zl = input_par.v0_zl; 
 
-v0_r = v0_zh(:,JR+1:N); % cutting the aging group down 
+v0_r = v0_zh(:,JR:N); % cutting the aging group down 
 %-------------- Begin trail and error to find the euqilibirumn wage -----
 diff = 10;
 Iter = 0;
 tol_price = 0.001;
 
 while diff > tol_price
-tic
+% tic
 
 % compute the wage and interest rate given guess L0 and K0
 w = (1-aalpha) * (K0 / L0) ^aalpha; 
@@ -102,16 +102,17 @@ c_r(c_r <=0) = NaN;
 u_r = (c_r .^ ((1-ssigma) .* ggama))./(1-ssigma);
 u_r(isnan(u_r)) = -inf;
 
-v1_r = zeros(Na,N-JR); % v1 is the current period of value function.
-dec_r = zeros(Na,N-JR);
+v1_r = zeros(Na,N-JR+1); % v1 is the current period of value function.
+dec_r = zeros(Na,N-JR+1);
 
+v1_r(:,N-JR+1) = u_r(:,1); % the value for the last period is to choose aa = 0; 
 
 
 % find the value function for the T age agent
 % v1_r(:,N-JR)= v0_r(:,N-JR); % The coloumn 1 means the agent choose not to save in this period.
 
 % find the value function for the j<T age agent
-for j = N-JR-1:-1:1
+for j = N-JR:-1:1
     w_r = u_r + bbeta .*v0_r(:,j+1)';
     [v1_r(:,j), dec_r(:,j)] = max(w_r,[],2);
 end
@@ -154,6 +155,9 @@ dec_aa_zl = zeros(Na,JR-1);
 dec_l_zh = zeros(Na,JR-1);
 dec_l_zl = zeros(Na,JR-1);
 
+v1_w_zh = zeros(Na,JR-1);
+v1_w_zl = zeros(Na,JR-1);
+
 for j = JR-1
     % extract the value function for the previous period
 v0_w_zh_temp = v0_w_zh(:,j+1);
@@ -190,8 +194,8 @@ e2j = e(2,j);
    % - v1_zh_aa the optimal value w_zh after choosing aa, given a. The row of
    % w_zh is varies of l.
    % - dec_zh_aa is the optimal choice of aa given varies of l
-   [v1_zh, dec_zh_aa] = max(w_zh,[],2);
-   [v1_zl, dec_zl_aa] = max(w_zl,[],2); 
+   [v1_zh_temp, dec_zh_aa] = max(w_zh,[],2);
+   [v1_zl_temp, dec_zl_aa] = max(w_zl,[],2); 
    
    % storage the asset choice
     dec_aa_zh(:,j) = dec_zh_aa;
@@ -204,8 +208,8 @@ e2j = e(2,j);
    end
    
     % storage the value function
-    v1_w_zh(:,j) = v1_zh;
-    v1_w_zl(:,j) = v1_zl;
+    v1_w_zh(:,j) = v1_zh_temp;
+    v1_w_zl(:,j) = v1_zl_temp;
 end
 
 %%
@@ -213,8 +217,8 @@ end
 %------- For the rest of the working agent  -------------------------------
  for j = JR-2:-1:1
     % extract the value function for the previous period
-    v0_w_zh_temp = v0_w_zh(:,j+1);
-    v0_w_zl_temp = v0_w_zl(:,j+1);
+    v0_w_zh_temp = v0_zh(:,j+1);
+    v0_w_zl_temp = v0_zl(:,j+1);
 
     % the transition probability
     P11= Pi(1,1);
@@ -251,8 +255,8 @@ end
    % - v1_zh_aa the optimal value w_zh after choosing aa, given a. The row of
    % w_zh is varies of l.
    % - dec_zh_aa is the optimal choice of aa given varies of l
-   [v1_zh_aa, dec_zh_aa] = max(w_zh,[],2);
-   [v1_zl_aa, dec_zl_aa] = max(w_zl,[],2); 
+   [v1_zh_temp, dec_zh_aa] = max(w_zh,[],2);
+   [v1_zl_temp, dec_zl_aa] = max(w_zl,[],2); 
 
    
     % storage the asset choice
@@ -266,11 +270,9 @@ end
    end
    
     % storage the value function
-    v1_w_zh(:,j) = v1_zh_aa;
-    v1_w_zl(:,j) = v1_zl_aa;
-   
-    v0_w_zh(:,j) = v1_w_zh(:,j); 
-    v0_w_zl(:,j) = v1_w_zl(:,j);  
+    v1_w_zh(:,j) = v1_zh_temp;
+    v1_w_zl(:,j) = v1_zl_temp;
+    
 %fprintf('The current age group is %d .\n',j);
 
  end
@@ -395,8 +397,8 @@ mu_phi_zh = [mu_phi_zh, mu_phi_r];
 mu_phi_zl = [mu_phi_zl, mu_phi_r];
 
 % merge the two value function
-v_zh = [v0_w_zh, v0_r];
-v_zl = [v0_w_zl, v0_r];
+v_zh = [v1_w_zh, v1_r];
+v_zl = [v1_w_zl, v1_r];
 
 
 
@@ -428,9 +430,9 @@ L0 = L1;
 
 Iter = Iter + 1;
 
-fprintf('Iteration %d: the difference is %.4f, wage is %.4f, interest rate is %.4f \n ', Iter, diff,w, r);
+%fprintf('Iteration %d: the difference is %.4f, wage is %.4f, interest rate is %.4f \n ', Iter, diff,w, r);
 
-toc
+% toc
 end
 
 % bundling the output
