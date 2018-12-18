@@ -9,3 +9,5 @@
 * But now I need to finished the code for the transtion part (done!)
 
 * Note here that I do not update the K in the transition process
+
+* Next time I need to start with the stableStatus.mat
